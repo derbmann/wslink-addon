@@ -3,15 +3,11 @@ error_log stderr;
 pid /var/run/nginx.pid;
 
 events {
-    worker_connections 1024;
+    worker_connections 6;
 }
 
 http {
     map_hash_bucket_size 128;
-
-    # Docker embedded DNS — lets us re-resolve HA's internal IP without a restart
-    resolver 127.0.0.11 ipv6=off valid=10s;
-    resolver_timeout 5s;
 
     map $http_upgrade $connection_upgrade {
         default upgrade;
@@ -45,24 +41,18 @@ http {
         }
 
         location = /data/upload.php {
-
-            set $ha_upstream homeassistant.local.hass.io;
-            proxy_connect_timeout 3s;
-            proxy_send_timeout    10s;
-            proxy_read_timeout    10s;
-            proxy_next_upstream   error timeout;
-            proxy_pass http://$ha_upstream:{{ ha_port }}/data/upload.php;
-
-
+            proxy_pass http://homeassistant.local.hass.io:{{ ha_port }}/data/upload.php;
+            # proxy_set_header Host $http_host;
+            # proxy_http_version 1.1;
+            # proxy_set_header Upgrade $http_upgrade;
+            # proxy_set_header Connection $connection_upgrade;
+            # proxy_set_header X-Forwarded-Host $http_host;
+            # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            # proxy_set_header X-Forwarded-For $proxy_protocol_addr;
         }
 
         location = /weatherstation/updateweatherstation.php {
-            set $ha_upstream homeassistant.local.hass.io;
-            proxy_connect_timeout 3s;
-            proxy_send_timeout    10s;
-            proxy_read_timeout    10s;
-            proxy_next_upstream   error timeout;
-            proxy_pass http://$ha_upstream:{{ ha_port }}/weatherstation/updateweatherstation.php;
+            proxy_pass http://homeassistant.local.hass.io:{{ ha_port }}/weatherstation/updateweatherstation.php;
         }
 
         location = /healthz {
